@@ -33,37 +33,97 @@ class AIModelManager {
   private embeddingModel: any = null;
   private qaModel: any = null;
   private isInitialized = false;
+  private initializationPromise: Promise<void> | null = null;
+
+  // Retry helper with exponential backoff
+  private async retryWithBackoff<T>(
+    fn: () => Promise<T>,
+    maxRetries: number = 3,
+    baseDelay: number = 1000
+  ): Promise<T> {
+    let lastError: Error | null = null;
+    
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        return await fn();
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        
+        if (attempt < maxRetries - 1) {
+          const delay = baseDelay * Math.pow(2, attempt);
+          console.log(`⚠️ Attempt ${attempt + 1} failed, retrying in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    }
+    
+    throw lastError || new Error('Unknown error');
+  }
 
   async initialize(): Promise<void> {
     if (this.isInitialized) return;
-
-    try {
-      // Initialize embedding model (MiniLM for 384-dimensional embeddings)
-      this.embeddingModel = await pipeline(
-        'feature-extraction',
-        'Xenova/all-MiniLM-L6-v2',
-        { 
-          device: 'wasm',
-          dtype: 'fp32'
-        }
-      );
-
-      // Initialize QA model for metric extraction
-      this.qaModel = await pipeline(
-        'question-answering',
-        'Xenova/distilbert-base-uncased-distilled-squad',
-        { 
-          device: 'wasm',
-          dtype: 'fp32'
-        }
-      );
-
-      this.isInitialized = true;
-      console.log('✅ AI models initialized successfully');
-    } catch (error) {
-      console.error('❌ Failed to initialize AI models:', error);
-      throw error;
+    
+    // If initialization is already in progress, wait for it
+    if (this.initializationPromise) {
+      return this.initializationPromise;
     }
+
+    this.initializationPromise = (async () => {
+      try {
+        console.log('🔄 Initializing AI models...');
+        console.log('📥 Downloading embedding model (this may take a while on first load)...');
+
+        // Initialize embedding model with retry logic
+        this.embeddingModel = await this.retryWithBackoff(async () => {
+          return await pipeline(
+            'feature-extraction',
+            'Xenova/all-MiniLM-L6-v2',
+            { 
+              device: 'wasm',
+              dtype: 'fp32'
+            }
+          );
+        });
+
+        console.log('✅ Embedding model loaded');
+        console.log('📥 Downloading QA model (this may also take a while)...');
+
+        // Initialize QA model with retry logic
+        this.qaModel = await this.retryWithBackoff(async () => {
+          return await pipeline(
+            'question-answering',
+            'Xenova/distilbert-base-uncased-distilled-squad',
+            { 
+              device: 'wasm',
+              dtype: 'fp32'
+            }
+          );
+        });
+
+        console.log('✅ QA model loaded');
+        this.isInitialized = true;
+        console.log('✅ AI models initialized successfully');
+      } catch (error) {
+        console.error('❌ Failed to initialize AI models:', error);
+        // Reset promise so we can retry
+        this.initializationPromise = null;
+        
+        // Provide helpful error message
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        if (errorMessage.includes('Failed to fetch') || errorMessage.includes('ERR_CONTENT_LENGTH_MISMATCH')) {
+          throw new Error(
+            'Failed to download AI models. This may be due to:\n' +
+            '1. Network connectivity issues\n' +
+            '2. CDN service temporarily unavailable\n' +
+            '3. Firewall/proxy blocking the download\n\n' +
+            'Please check your internet connection and try again. The models will be cached after the first successful download.'
+          );
+        }
+        throw error;
+      }
+    })();
+
+    return this.initializationPromise;
   }
 
   async generateEmbedding(text: string): Promise<number[]> {

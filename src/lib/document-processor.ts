@@ -5,17 +5,14 @@ import * as pdfjs from 'pdfjs-dist';
 import mammoth from 'mammoth';
 import * as XLSX from 'xlsx';
 
-// Set up PDF.js worker (use bundled worker instead of CDN)
-try {
-  // Try to use the bundled worker first
-  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-    'pdfjs-dist/build/pdf.worker.min.js',
-    import.meta.url
-  ).toString();
-} catch (error) {
-  // Fallback to CDN if bundled worker fails
-  console.warn('Failed to load bundled PDF worker, using CDN fallback:', error);
-  pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+// Set up PDF.js worker for Vite
+// The worker file is copied to public folder during setup so Vite can serve it statically
+// This is more reliable than CDN or trying to load from node_modules
+if (typeof window !== 'undefined') {
+  // Use the worker file from the public folder (served at root)
+  pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+  console.log(`PDF.js worker configured: ${pdfjs.GlobalWorkerOptions.workerSrc}`);
+  console.log(`Worker version: ${pdfjs.version || '5.4.54'}`);
 }
 
 export interface DocumentChunk {
@@ -105,9 +102,10 @@ export const processPDF = async (file: File): Promise<ProcessedDocument> => {
     const arrayBuffer = await file.arrayBuffer();
     console.log(`PDF file size: ${arrayBuffer.byteLength} bytes`);
     
+    const pdfjsVersion = pdfjs.version || '5.4.54';
     const loadingTask = pdfjs.getDocument({
       data: arrayBuffer,
-      cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.7.76/cmaps/',
+      cMapUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsVersion}/cmaps/`,
       cMapPacked: true,
     });
     

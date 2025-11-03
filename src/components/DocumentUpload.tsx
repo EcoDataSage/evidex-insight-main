@@ -75,6 +75,8 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ onDocumentsProcessed, o
     setIsProcessing(true);
 
     try {
+      const completedDocs: DocumentFile[] = [];
+      
       // Process each document
       for (const doc of documents) {
         setDocuments(prev => 
@@ -103,15 +105,19 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ onDocumentsProcessed, o
           // Simulate extracted text (in real implementation, this would use pdfjs/mammoth/xlsx)
           const extractedText = `Sample extracted text from ${doc.file.name}. This would contain the actual document content in a real implementation.`;
 
+          const completedDoc: DocumentFile = {
+            ...doc,
+            status: 'completed',
+            progress: 100,
+            extractedText,
+            sha256
+          };
+
           setDocuments(prev => 
-            prev.map(d => d.id === doc.id ? { 
-              ...d, 
-              status: 'completed', 
-              progress: 100, 
-              extractedText,
-              sha256
-            } : d)
+            prev.map(d => d.id === doc.id ? completedDoc : d)
           );
+
+          completedDocs.push(completedDoc);
 
         } catch (error) {
           setDocuments(prev => 
@@ -124,7 +130,6 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ onDocumentsProcessed, o
         }
       }
 
-      const completedDocs = documents.filter(d => d.status === 'completed');
       if (completedDocs.length > 0) {
         onDocumentsProcessed(completedDocs);
         toast({

@@ -127,44 +127,49 @@ const ProcessingDashboard: React.FC<ProcessingDashboardProps> = ({ files, onComp
       
       // Step 2 & 3: Extract metrics (includes embedding generation)
       setCurrentStep(1);
-      updateStepStatus('embedding', 'processing', 0, 'Initializing AI models...');
+      updateStepStatus('embedding', 'processing', 0, 'Downloading AI models (first time may take a few minutes)...');
 
-      const extractions = await extractAllMetrics(
-        allChunks,
-        (metric, progress) => {
-          setCurrentMetric(metric);
-          
-          if (metric === 'Generating embeddings') {
-            updateStepStatus('embedding', 'processing', progress, `Processing embeddings: ${progress.toFixed(0)}%`);
-          } else {
-            if (steps[1].status !== 'completed') {
-              updateStepStatus('embedding', 'completed', 100, 'Embeddings generated successfully');
-              setCurrentStep(2);
+      try {
+        const extractions = await extractAllMetrics(
+          allChunks,
+          (metric, progress) => {
+            setCurrentMetric(metric);
+            
+            if (metric === 'Generating embeddings') {
+              updateStepStatus('embedding', 'processing', progress, `Processing embeddings: ${progress.toFixed(0)}%`);
+            } else {
+              if (steps[1].status !== 'completed') {
+                updateStepStatus('embedding', 'completed', 100, 'Embeddings generated successfully');
+                setCurrentStep(2);
+              }
+              updateStepStatus('extraction', 'processing', progress, `Extracting: ${metric}`);
             }
-            updateStepStatus('extraction', 'processing', progress, `Extracting: ${metric}`);
           }
-        }
-      );
+        );
+        
+        updateStepStatus('extraction', 'completed', 100, `Extracted ${extractions.extractions.length} metrics`);
+        
+        // Step 4: Finalize
+        setCurrentStep(3);
+        updateStepStatus('analysis', 'processing', 50, 'Preparing results...');
+        
+        // Brief delay to show the final step
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        updateStepStatus('analysis', 'completed', 100, 'Analysis complete!');
+        setOverallProgress(100);
 
-      updateStepStatus('extraction', 'completed', 100, `Extracted ${extractions.extractions.length} metrics`);
-
-      // Step 4: Finalize
-      setCurrentStep(3);
-      updateStepStatus('analysis', 'processing', 50, 'Preparing results...');
-      
-      // Brief delay to show the final step
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      updateStepStatus('analysis', 'completed', 100, 'Analysis complete!');
-      setOverallProgress(100);
-
-      const processingTime = Date.now() - startTime;
-      
-      // Complete processing
-      setTimeout(() => {
-        setIsProcessing(false);
-        onComplete(extractions.extractions, processingTime, allChunks.length);
-      }, 1500);
+        const processingTime = Date.now() - startTime;
+        
+        // Complete processing
+        setTimeout(() => {
+          setIsProcessing(false);
+          onComplete(extractions.extractions, processingTime, allChunks.length);
+        }, 1500);
+      } catch (extractionError) {
+        // Re-throw to be caught by outer catch block
+        throw extractionError;
+      }
 
     } catch (error) {
       console.error('Processing failed:', error);
