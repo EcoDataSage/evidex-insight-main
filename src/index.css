@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Evidexia Design System - Evidence-linked sustainability reporting */
+
+@layer base {
+  :root {
+    /* Core Brand Colors - HSL Format */
+    --background: 0 0% 100%;
+    --foreground: 210 11% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 210 11% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 11% 15%;
+
+    /* Primary: Evidexia Blue (#2E5BFF) */
+    --primary: 227 100% 59%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 227 100% 70%;
+
+    /* Secondary: Deep Gray (#111827) */
+    --secondary: 210 11% 15%;
+    --secondary-foreground: 0 0% 100%;
+
+    /* Accent: Success Green (#22C55E) */
+    --accent: 142 71% 45%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Neutral: Light Gray (#F3F4F6) */
+    --muted: 210 20% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 227 100% 59%;
+
+    --radius: 0.75rem;
+
+    /* Evidexia Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(227 100% 59%), hsl(142 71% 45%));
+    --gradient-hero: linear-gradient(135deg, hsl(227 100% 59%) 0%, hsl(227 100% 70%) 50%, hsl(142 71% 45%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(210 20% 98%) 100%);
+    
+    /* Shadows with brand colors */
+    --shadow-primary: 0 10px 30px -5px hsl(227 100% 59% / 0.3);
+    --shadow-accent: 0 10px 30px -5px hsl(142 71% 45% / 0.3);
+    --shadow-glow: 0 0 40px hsl(227 100% 70% / 0.4);
+    
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 210 11% 8%;
+    --foreground: 0 0% 98%;
+
+    --card: 210 11% 10%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 210 11% 10%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 227 100% 59%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 227 100% 70%;
+
+    --secondary: 210 11% 15%;
+    --secondary-foreground: 0 0% 98%;
+
+    --accent: 142 71% 45%;
+    --accent-foreground: 0 0% 100%;
+
+    --muted: 210 11% 15%;
+    --muted-foreground: 215 16% 65%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 210 11% 20%;
+    --input: 210 11% 20%;
+    --ring: 227 100% 59%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
